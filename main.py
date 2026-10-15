@@ -5,34 +5,36 @@ import random
 import sys
 import time
 
-topic = "TUDBONUSLABSALERT"
-url = "https://queue.tudelft.nl"
-loop = 90
-storage = "storage.json"
+#constants
+topic = "TUDBONUSLABSALERT" #topic name for ntfy notifications on the phone
+url = "https://queue.tudelft.nl" #the url for my queue, change this to whatever website you want to monitor
+loop = 90 #1min 30 seconds so that i dont get throttled
+storage = "storage.json" #cookie storage file
 
-def detect_bonus(page):
-    return "bonus" in page.inner_text("body").lower()
+def detect_bonus(page): # @param page: playwright page object , @return bool: true if the word was detected
+    return "bonus" in page.inner_text("body").lower() #replace bonus here with whatever word youre searching for here
 
-def log_out(page):
+def log_out(page): # @param page: playwright page object , @return bool: true if it is sent back to the login page
     return ("login" in page.url.lower())
 
-def log_in():
+def log_in(): # @return void: manual log into the website and save the storage data to storage.json
     with sync_playwright() as p:
         
-        browser = p.chromium.launch(headless = False)
+        browser = p.chromium.launch(headless = False) #manual log in so headless false
         context = browser.new_context()
 
         page = context.new_page()
         page.goto(url)
 
-        input("press the enter key once logged in: ")
+        input("press the enter key once logged in: ") #buffer while they enter their credientials
 
         context.storage_state(path=storage)
         browser.close()
 
-    print("saved")
+    print("saved") #confirmation
 
-def notify(desc, urgent=False):
+def notify(desc, urgent=False): # @param desc: string to send to ntfy , @param urgent: bool if the notification is urgent
+
     print("New notification! : "+desc)
     
     try:
@@ -49,9 +51,9 @@ def notify(desc, urgent=False):
     except requests.RequestException as e:
         print("ntfy failed:", e)
 
-def watch_mode():
+def watch_mode(): # @return void: main loop that controls all
     
-    warned_logout = False
+    warned_logout = False # holds whether the user has already been logged out, to prevent further notifications
     was_open = False
 
     with sync_playwright() as p:
@@ -60,7 +62,7 @@ def watch_mode():
         currentPage = context.new_page()
         
         while True:
-            print("watching the queue..... \n")
+            print("watching the queue..... \n") #confirms that the loop is still awake
             try:
                 currentPage.goto(url, wait_until="networkidle", timeout=30000)
                 if log_out(currentPage):
@@ -75,9 +77,9 @@ def watch_mode():
                     was_open = open_now
 
             except Exception as issue:
-                print(issue) 
+                print(issue)  #error handling
 
-            time.sleep(loop + random.uniform(-5,5))
+            time.sleep(loop + random.uniform(-5,5)) #to not get throttled
 
 if __name__ == "__main__":
-    log_in() if len(sys.argv)>1 and sys.argv[1] == "login" else watch_mode()
+    log_in() if len(sys.argv)>1 and sys.argv[1] == "login" else watch_mode() #if the script is run using login it means that the user wants to add their credientials to storage
