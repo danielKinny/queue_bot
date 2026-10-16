@@ -12,6 +12,7 @@ loop = 90 #1min 30 seconds so that i dont get throttled
 storage = "storage.json" #cookie storage file
 
 def detect_bonus(page): # @param page: playwright page object , @return bool: true if the word was detected
+    print(page.inner_text("body") + "\n")
     return "bonus" in page.inner_text("body").lower() #replace bonus here with whatever word youre searching for here
 
 def log_out(page): # @param page: playwright page object , @return bool: true if it is sent back to the login page
@@ -60,9 +61,11 @@ def watch_mode(): # @return void: main loop that controls all
         browser = p.chromium.launch(headless = True)
         context = browser.new_context(storage_state=storage)
         currentPage = context.new_page()
+
+        counter = 1
         
         while True:
-            print("watching the queue..... \n") #confirms that the loop is still awake
+            print("watching the queue..... (" + str(counter) + ")\n") #confirms that the loop is still awake
             try:
                 currentPage.goto(url, wait_until="networkidle", timeout=30000)
                 if log_out(currentPage):
@@ -79,6 +82,7 @@ def watch_mode(): # @return void: main loop that controls all
             except Exception as issue:
                 print(issue)  #error handling
 
+            counter += 1
             time.sleep(loop + random.uniform(-5,5)) #to not get throttled
 
 if __name__ == "__main__":
